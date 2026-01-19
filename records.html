@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Records</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+
+    <!-- Navbar -->
+    <nav class="bg-green-600 text-white p-4 flex justify-between">
+        <h1 class="text-xl font-bold">Patient Records</h1>
+        <a href="dashboard.html" class="text-white">Dashboard</a>
+    </nav>
+
+    <!-- Add Patient Form -->
+    <div class="max-w-6xl mx-auto mt-10 p-6 bg-white shadow-lg rounded-lg">
+        <h2 class="text-2xl font-bold mb-6">Add Patient</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <input type="text" id="name" placeholder="Name" class="p-2 border rounded">
+            <input type="number" id="age" placeholder="Age" class="p-2 border rounded">
+            <input type="text" id="condition" placeholder="Condition" class="p-2 border rounded">
+            <select id="doctor" class="p-2 border rounded">
+                <option value="">Select Doctor</option>
+                <option value="Dr. Smith (Cardiologist)">Dr. Smith (Cardiologist)</option>
+                <option value="Dr. Patel (Neurologist)">Dr. Patel (Neurologist)</option>
+                <option value="Dr. Lee (Orthopedic)">Dr. Lee (Orthopedic)</option>
+                <option value="Dr. Khan (Dermatologist)">Dr. Khan (Dermatologist)</option>
+                <option value="Dr. Gomez (Pediatrician)">Dr. Gomez (Pediatrician)</option>
+            </select>
+        </div>
+
+        <button onclick="addPatient()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Add Patient</button>
+        <p id="error-message" class="text-red-600 mt-2 hidden"></p>
+    </div>
+
+    <!-- Patient Records Table -->
+    <div class="max-w-6xl mx-auto mt-10 p-6 bg-white shadow-lg rounded-lg">
+        <h2 class="text-2xl font-bold mb-6">Patient List</h2>
+        <table class="w-full border-collapse border border-gray-300">
+            <thead>
+                <tr class="bg-gray-200">
+                    <th class="border p-2">Name</th>
+                    <th class="border p-2">Age</th>
+                    <th class="border p-2">Condition</th>
+                    <th class="border p-2">Doctor</th>
+                </tr>
+            </thead>
+            <tbody id="patient-list">
+                <!-- Patients will be dynamically loaded here -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // Function to fetch and display patient records
+        function fetchPatients() {
+            fetch('get_patients.php')
+                .then(response => response.json())
+                .then(patients => {
+                    let tableBody = document.getElementById("patient-list");
+                    tableBody.innerHTML = "";
+                    patients.forEach(patient => {
+                        let row = `<tr class="border">
+                            <td class="border p-2">${patient.name}</td>
+                            <td class="border p-2">${patient.age}</td>
+                            <td class="border p-2">${patient.condition}</td>
+                            <td class="border p-2">${patient.doctor}</td>
+                        </tr>`;
+                        tableBody.innerHTML += row;
+                    });
+                })
+                .catch(error => console.error("Error fetching patients:", error));
+        }
+
+        // Function to add a patient
+        function addPatient() {
+            let name = document.getElementById("name").value.trim();
+            let age = document.getElementById("age").value.trim();
+            let condition = document.getElementById("condition").value.trim();
+            let doctor = document.getElementById("doctor").value;
+            let errorMessage = document.getElementById("error-message");
+
+            if (!name || !age || !condition || !doctor) {
+                errorMessage.innerText = "Please fill in all fields!";
+                errorMessage.classList.remove("hidden");
+                return;
+            } else {
+                errorMessage.classList.add("hidden");
+            }
+
+            let data = new FormData();
+            data.append("name", name);
+            data.append("age", age);
+            data.append("condition", condition);
+            data.append("doctor", doctor);
+
+            fetch('add_patient.php', {
+                method: 'POST',
+                body: data
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    alert("Patient added successfully!");
+                    fetchPatients(); // Refresh the list dynamically
+                    document.getElementById("name").value = "";
+                    document.getElementById("age").value = "";
+                    document.getElementById("condition").value = "";
+                    document.getElementById("doctor").value = "";
+                } else {
+                    alert("Error: " + result.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert("There was an error adding the patient.");
+            });
+        }
+
+        // Load patients on page load
+        window.onload = fetchPatients;
+    </script>
+
+</body>
+</html>
